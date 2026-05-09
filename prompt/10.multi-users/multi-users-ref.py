@@ -246,6 +246,8 @@ def init_state() -> None:
         "openai_input_key": "",
         "anthropic_input_key": "",
         "gemini_input_key": "",
+        "login_email": "",
+        "login_password": "",
     }
     for key, value in defaults.items():
         if key not in st.session_state:
@@ -332,6 +334,7 @@ def sign_in(login_id: str, password: str) -> Tuple[bool, str]:
 def sign_out() -> None:
     st.session_state.auth_user_id = None
     st.session_state.auth_user_email = None
+    st.session_state.current_page = "main"
     reset_screen()
 
 
@@ -747,6 +750,10 @@ def render_signup_page() -> None:
                 ok, message = sign_up(email, password)
                 if ok:
                     st.success(message)
+                    st.session_state.login_email = normalize_login_id(email)
+                    st.session_state.login_password = ""
+                    st.session_state.current_page = "main"
+                    st.rerun()
                 else:
                     st.error(message)
     with col2:
@@ -772,6 +779,7 @@ def render_sidebar() -> None:
         if st.button("로그인", use_container_width=True):
             ok, message = sign_in(login_email, login_password)
             if ok:
+                st.session_state.current_page = "main"
                 st.sidebar.success(message)
                 st.rerun()
             else:
@@ -782,7 +790,7 @@ def render_sidebar() -> None:
             st.sidebar.success("로그아웃되었습니다.")
             st.rerun()
 
-    if st.sidebar.button("회원가입 페이지", use_container_width=True):
+    if st.sidebar.button("회원가입 페이지", use_container_width=True, disabled=bool(st.session_state.auth_user_id)):
         st.session_state.current_page = "signup"
         st.rerun()
 
@@ -915,6 +923,9 @@ def render_main() -> None:
 
 
 render_sidebar()
+if st.session_state.auth_user_id and st.session_state.current_page == "signup":
+    st.session_state.current_page = "main"
+
 if st.session_state.current_page == "signup":
     render_signup_page()
 else:
